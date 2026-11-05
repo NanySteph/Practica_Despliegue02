@@ -26,7 +26,7 @@ label, .stMarkdown p { color: #f5f5f5 !important; }
 <div class="firma">✨ Stephanie Mercedes Machado Alvarado</div>
 """, unsafe_allow_html=True)
 
-# ─────────── Datos y modelo ───────────
+
 @st.cache_resource
 def entrenar():
     df = pd.read_csv("billboard.csv")
@@ -39,24 +39,23 @@ def entrenar():
     for col in ["durationSeg", "top"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.dropna(subset=["top", "durationSeg", "artist_type", "tempo", "genre"])
-    df = df[df["durationSeg"] > 0]          # quitar duraciones inválidas
+    df = df[df["durationSeg"] > 0]
     df["top"] = df["top"].astype(int)
 
     X = pd.get_dummies(df[["artist_type", "tempo", "genre", "durationSeg"]])
     y = df["top"]
-    # class_weight="balanced" compensa que haya muchas más canciones "No Top 1"
     modelo = DecisionTreeClassifier(max_depth=4, min_samples_leaf=10,
                                     class_weight="balanced", random_state=30)
     modelo.fit(X, y)
     return df, X.columns, modelo
 
+
 try:
     df, columnas, modelo = entrenar()
 except FileNotFoundError:
-    st.error("No se encontró **billboard.csv** en el repositorio.")
+    st.error("No se encontró billboard.csv en el repositorio.")
     st.stop()
 
-# ─────────── Interfaz ───────────
 st.markdown("""
 <div class="hero">
   <h1>🎤 ¿Llegará al #1 de Billboard? 🏆</h1>
@@ -87,8 +86,4 @@ if st.button("🔮 ¡Predecir!", use_container_width=True):
         st.markdown('<div class="result-no">🎵 Esta canción no llegaría al Top 1</div>',
                     unsafe_allow_html=True)
     st.write("")
-    st.progress(float(prob), text=f"Confianza de ser #1: {prob:.1%}")
-        st.progress(float(prob), text=f"Probabilidad de ser #1: {prob:.1%}")
-
-st.markdown("---")
-st.caption("Laboratorio de Árboles de Decisión · Hecho con Streamlit 🎶")
+    st.progress(float(prob), text=f"Probabilidad de ser #1: {prob:.1%}")
