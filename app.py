@@ -27,7 +27,7 @@ label, .stMarkdown p { color: #f5f5f5 !important; }
 <div class="firma">✨ Stephanie Mercedes Machado Alvarado</div>
 """, unsafe_allow_html=True)
 
-
+# ─────────── Datos y modelo ───────────
 @st.cache_resource
 def entrenar():
     df = pd.read_csv("billboard.csv")
@@ -40,11 +40,12 @@ def entrenar():
     for col in ["durationSeg", "top"]:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.dropna(subset=["top", "durationSeg", "artist_type", "tempo", "genre"])
-    df = df[df["durationSeg"] > 0]
+    df = df[df["durationSeg"] > 0]          # quitar duraciones inválidas
     df["top"] = df["top"].astype(int)
 
     X = pd.get_dummies(df[["artist_type", "tempo", "genre", "durationSeg"]])
     y = df["top"]
+    # class_weight="balanced" compensa que haya muchas más canciones "No Top 1"
     modelo = DecisionTreeClassifier(max_depth=4, min_samples_leaf=10,
                                     class_weight="balanced", random_state=30)
     modelo.fit(X, y)
@@ -72,8 +73,7 @@ def fuegos_artificiales():
 .fw-capa {{ position: fixed; inset: 0; pointer-events: none; z-index: 9999;
             animation: desaparecer 5s forwards; }}
 .fw {{ position: absolute; width: 4px; height: 4px; border-radius: 50%;
-       opacity: 0; transform: scale(0);
-       animation: explotar 1.6s ease-out 3; }}
+       opacity: 0; transform: scale(0); animation: explotar 1.6s ease-out 3; }}
 @keyframes explotar {{
   0%   {{ transform: scale(0);   opacity: 1; }}
   70%  {{ transform: scale(1);   opacity: 1; }}
@@ -86,19 +86,17 @@ def fuegos_artificiales():
 @keyframes latir {{ from {{ transform: scale(1); }} to {{ transform: scale(1.15); }} }}
 @keyframes desaparecer {{ 0%, 85% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 </style>
-<div class="fw-capa">
-  {explosiones}
-  <div class="fw-texto">🏆 ¡TOP 1! 🏆</div>
-</div>
+<div class="fw-capa">{explosiones}<div class="fw-texto">🏆 ¡TOP 1! 🏆</div></div>
 """
 
 
 try:
     df, columnas, modelo = entrenar()
 except FileNotFoundError:
-    st.error("No se encontró billboard.csv en el repositorio.")
+    st.error("No se encontró **billboard.csv** en el repositorio.")
     st.stop()
 
+# ─────────── Interfaz ───────────
 st.markdown("""
 <div class="hero">
   <h1>🎤 ¿Llegará al #1 de Billboard? 🏆</h1>
@@ -108,3 +106,25 @@ st.markdown("""
 
 a, b = st.columns(2)
 with a:
+    tipo = st.selectbox("👩‍🎤 Tipo de artista", sorted(df["artist_type"].unique()))
+    tempo = st.selectbox("🥁 Tempo", sorted(df["tempo"].unique()))
+with b:
+    genero = st.selectbox("🎸 Género", sorted(df["genre"].unique()))
+    dur = st.slider("⏱️ Duración (segundos)", 60, 600, 210)
+    st.caption(f"{dur // 60}:{dur % 60:02d} minutos")
+
+if st.button("🔮 ¡Predecir!", use_container_width=True):
+    nueva = pd.get_dummies(pd.DataFrame([{"artist_type": tipo, "tempo": tempo,
+                                          "genre": genero, "durationSeg": dur}]))
+    nueva = nueva.reindex(columns=columnas, fill_value=False)
+    prob = modelo.predict_proba(nueva)[0][1]
+
+    if prob >= 0.5:
+        st.markdown(fuegos_artificiales(), unsafe_allow_html=True)
+        st.markdown('<div class="result-yes">🏆 ¡Esta canción llegaría al TOP 1!</div>',
+                    unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="result-no">🎵 Esta canción no llegaría al Top 1</div>',
+                    unsafe_allow_html=True)
+    st.write("")
+    st.progress(float(prob), text=f"Probabilidad de ser #1: {prob:.1%}")
