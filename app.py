@@ -1,4 +1,5 @@
 import csv
+import random
 import pandas as pd
 import streamlit as st
 from sklearn.tree import DecisionTreeClassifier
@@ -50,6 +51,48 @@ def entrenar():
     return df, X.columns, modelo
 
 
+def fuegos_artificiales():
+    colores = ["#ffd166", "#ff006e", "#06d6a0", "#3a86ff", "#8338ec", "#ffffff"]
+    explosiones = ""
+    for i in range(7):
+        color = random.choice(colores)
+        chispas = ", ".join(
+            f"{random.randint(-160, 160)}px {random.randint(-160, 160)}px 0 2px {color}"
+            for _ in range(40)
+        )
+        x = random.randint(10, 90)
+        y = random.randint(10, 55)
+        retraso = round(i * 0.4, 1)
+        explosiones += (
+            f'<div class="fw" style="left:{x}%; top:{y}%; '
+            f'animation-delay:{retraso}s; box-shadow:{chispas};"></div>'
+        )
+    return f"""
+<style>
+.fw-capa {{ position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+            animation: desaparecer 5s forwards; }}
+.fw {{ position: absolute; width: 4px; height: 4px; border-radius: 50%;
+       opacity: 0; transform: scale(0);
+       animation: explotar 1.6s ease-out 3; }}
+@keyframes explotar {{
+  0%   {{ transform: scale(0);   opacity: 1; }}
+  70%  {{ transform: scale(1);   opacity: 1; }}
+  100% {{ transform: scale(1.2); opacity: 0; }}
+}}
+.fw-texto {{ position: absolute; top: 40%; width: 100%; text-align: center;
+             font-size: 4.5rem; font-weight: 900; color: #ffd166;
+             text-shadow: 0 0 20px #ff006e, 0 0 40px #8338ec;
+             animation: latir 0.8s ease-in-out infinite alternate; }}
+@keyframes latir {{ from {{ transform: scale(1); }} to {{ transform: scale(1.15); }} }}
+@keyframes desaparecer {{ 0%, 85% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
+</style>
+<div class="fw-capa">
+  {explosiones}
+  <div class="fw-texto">🏆 ¡TOP 1! 🏆</div>
+</div>
+"""
+
+
 try:
     df, columnas, modelo = entrenar()
 except FileNotFoundError:
@@ -65,25 +108,3 @@ st.markdown("""
 
 a, b = st.columns(2)
 with a:
-    tipo = st.selectbox("👩‍🎤 Tipo de artista", sorted(df["artist_type"].unique()))
-    tempo = st.selectbox("🥁 Tempo", sorted(df["tempo"].unique()))
-with b:
-    genero = st.selectbox("🎸 Género", sorted(df["genre"].unique()))
-    dur = st.slider("⏱️ Duración (segundos)", 60, 600, 210)
-    st.caption(f"{dur // 60}:{dur % 60:02d} minutos")
-
-if st.button("🔮 ¡Predecir!", use_container_width=True):
-    nueva = pd.get_dummies(pd.DataFrame([{"artist_type": tipo, "tempo": tempo,
-                                          "genre": genero, "durationSeg": dur}]))
-    nueva = nueva.reindex(columns=columnas, fill_value=False)
-    prob = modelo.predict_proba(nueva)[0][1]
-
-    if prob >= 0.5:
-        st.balloons()
-        st.markdown('<div class="result-yes">🏆 ¡Esta canción llegaría al TOP 1!</div>',
-                    unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="result-no">🎵 Esta canción no llegaría al Top 1</div>',
-                    unsafe_allow_html=True)
-    st.write("")
-    st.progress(float(prob), text=f"Probabilidad de ser #1: {prob:.1%}")
