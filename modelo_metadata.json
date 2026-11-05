@@ -1,0 +1,23 @@
+{
+    "tipo_modelo": "DecisionTreeClassifier",
+    "columnas_entrenamiento": [
+        "durationSeg",
+        "artist_type_Male",
+        "artist_type_Mixed",
+        "tempo_Medium Tempo",
+        "tempo_Slow Tempo",
+        "genre_Electronica",
+        "genre_Jazz",
+        "genre_Other",
+        "genre_Pop",
+        "genre_Rock",
+        "genre_Soundtrack",
+        "genre_Traditional",
+        "genre_Urban"
+    ],
+    "clases": [
+        "No llego al top 1",
+        "Sí llego al top 1"
+    ],
+    "proposito": "Predecir si un artista puede llegar 2 veces al puesto numero 1 de Billboard"
+}
